@@ -110,8 +110,9 @@ def current_user_auth(token: Annotated[str, Depends(oauth2_bearer)]):
         )
 
 
+
 """===========================================ENDPOINTS==========================================="""
-@router.post(path="/login""/register", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
+@router.post(path="/register", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
 def register_user(db: database_dependency, new_user: UserModel):
     user = User(
         email = new_user.email,
@@ -138,7 +139,7 @@ def login_for_access_token(db: database_dependency, form_data: form_dependency):
         )
     token = assign_token(id = user.id,
                          username = user.username,
-                         role = user.role,
+                         role = user.role.value,
                          time_delta = timedelta(minutes=30))
     return {
         "access_token" : token,
