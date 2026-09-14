@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from .database import *
-from .routers import auth
+from .routers import auth, profile
 
 
 app = FastAPI(title="PixelFit",
@@ -9,3 +9,4 @@ app = FastAPI(title="PixelFit",
 Base.metadata.create_all(bind=engine)
 
 app.include_router(auth.router)
+app.include_router(profile.router)
