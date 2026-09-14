@@ -117,3 +117,14 @@ def create_profile(db: database_dependency, user: user_dependency, profile: Prof
     db.commit()
     db.refresh(user_profile)
     return user_profile
+
+
+@router.get(path="/",status_code=status.HTTP_201_CREATED, response_model=ProfileResponse)
+def get_profile(db: database_dependency, user: user_dependency):
+    user_profile = db.query(Profile).filter(Profile.user_id==user.get("id")).first()
+    if user_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No User Profile Found"
+        )
+    return user_profile
