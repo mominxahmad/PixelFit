@@ -1,5 +1,5 @@
 from .database import Base
-from sqlalchemy import (Column, Integer, String, ForeignKey, DateTime,
+from sqlalchemy import (Column, Integer, Float, String, ForeignKey,
                         Enum as SQLEnum)
 from enum import Enum
 
@@ -51,4 +51,5 @@ class Profile(Base):
     activity_level = Column(SQLEnum(ActivityLevel), nullable=False)
     goal = Column(SQLEnum(Goal), nullable=False)
     bmr = Column(Integer, nullable=False)
-    bmi = Column(Integer, nullable=False)
+    bmi = Column(Float, nullable=False)
+    tdee = Column(Integer, nullable=False)
