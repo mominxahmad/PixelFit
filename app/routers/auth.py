@@ -1,15 +1,21 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from ..database import SessionLocal
 from typing import Annotated
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field, EmailStr
 from ..models import User
 from pwdlib import PasswordHash
+from fastapi.security import OAuth2PasswordRequestForm
+from datetime import datetime, timezone , timedelta
+from ..config import settings
+from jose import jwt
 
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+
+###  DEPENDENCIES
 def get_db():
     db = SessionLocal()
     try:
@@ -17,12 +23,15 @@ def get_db():
     finally:
         db.close()
 
-
 database_dependency = Annotated[Session, Depends(get_db)]
 
 password_hash = PasswordHash.recommended()
 
+form_dependency = Annotated[OAuth2PasswordRequestForm, Depends()]
 
+
+
+###  PYDANTIC MODELS
 class UserModel(BaseModel):
     email: EmailStr = Field(examples=["johndoe@email.com"])
     username: str = Field(min_length=3, max_length=30,
@@ -47,12 +56,41 @@ class UserResponse(BaseModel):
     email: str
     f_name: str
     l_name: str
-
     class Config:
         from_attributes = True
 
 
-@router.post("/register", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+
+
+
+###  ASSIGN TOKEN FUNCTIONS
+def confirm_and_get_user(username: str, plain_password: str, db: Session):
+    user = db.query(User).filter(User.username==username).first()
+    if user is None:
+        return False
+    if not password_hash.verify(plain_password, user.hashed_password):
+        return False
+    return user
+
+
+def assign_token(id: int, username: str, role: str, time_delta):
+    encode = {
+        "sub" : username,
+        "id" : id,
+        "role" : role
+    }
+    exp = datetime.now(timezone.utc) + time_delta
+    encode.update({"exp" : exp})
+    token = jwt.encode(encode, settings.SECRET_KEY, settings.ALGORITHM)
+    return token
+
+
+
+"""===========================================ENDPOINTS==========================================="""
+@router.post(path="/login""/register", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
 def register_user(db: database_dependency, new_user: UserModel):
     user = User(
         email = new_user.email,
@@ -64,5 +102,24 @@ def register_user(db: database_dependency, new_user: UserModel):
     db.add(user)
     db.commit()
     db.refresh(user)
-
     return user
+
+
+@router.post(path="/login", status_code=status.HTTP_200_OK, response_model=TokenResponse)
+def login_for_access_token(db: database_dependency, form_data: form_dependency):
+    user = confirm_and_get_user(username = form_data.username,
+                                plain_password = form_data.password,
+                                db = db)
+    if not user:
+        raise HTTPException(
+            status_code = status.HTTP_401_UNAUTHORIZED,
+            detail = "Invalid Credentials."
+        )
+    token = assign_token(id = user.id,
+                         username = user.username,
+                         role = user.role,
+                         time_delta = timedelta(minutes=30))
+    return {
+        "access_token" : token,
+        "token_type" : "bearer"
+        }
