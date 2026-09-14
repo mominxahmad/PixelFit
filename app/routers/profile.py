@@ -39,7 +39,7 @@ class ProfileModel(BaseModel):
                            examples=[175])
     weight_kg: int = Field(gt=20, lt=500,
                            description="Body weight in kilograms, must be between 20 and 500 kg",
-                           examples=[72.5])
+                           examples=[72])
     activity_level: ActivityLevel = Field(
         description="Daily physical activity level used for calculating TDEE",
         examples=["moderate"]
@@ -119,7 +119,7 @@ def create_profile(db: database_dependency, user: user_dependency, profile: Prof
     return user_profile
 
 
-@router.get(path="/",status_code=status.HTTP_201_CREATED, response_model=ProfileResponse)
+@router.get(path="/me",status_code=status.HTTP_200_OK, response_model=ProfileResponse)
 def get_profile(db: database_dependency, user: user_dependency):
     user_profile = db.query(Profile).filter(Profile.user_id==user.get("id")).first()
     if user_profile is None:
@@ -128,3 +128,32 @@ def get_profile(db: database_dependency, user: user_dependency):
             detail="No User Profile Found"
         )
     return user_profile
+
+
+@router.put(path="/", status_code=status.HTTP_200_OK, response_model=ProfileResponse)
+def update_profile(db: database_dependency, user: user_dependency, profile: ProfileModel):
+    existing_profile = db.query(Profile).filter(Profile.user_id == user.get("id")).first()
+    if existing_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No User Profile Found"
+        )
+    user_stats = calculate_bmr_bmi_tdee(
+        profile.age,
+        profile.sex,
+        profile.height_cm,
+        profile.weight_kg,
+        profile.activity_level
+    )
+    existing_profile.age = profile.age
+    existing_profile.sex = profile.sex
+    existing_profile.height_cm = profile.height_cm
+    existing_profile.weight_kg = profile.weight_kg
+    existing_profile.activity_level = profile.activity_level
+    existing_profile.goal = profile.goal
+    existing_profile.bmr = user_stats["bmr"]
+    existing_profile.bmi = user_stats["bmi"]
+    existing_profile.tdee = user_stats["tdee"]
+    db.commit()
+    db.refresh(existing_profile)
+    return existing_profile
