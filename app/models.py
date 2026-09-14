@@ -34,9 +34,9 @@ class ActivityLevel(Enum):
 
 
 class Goal(Enum):
-    LOSE = "lose"
+    CUT = "cut"
     MAINTAIN = "maintain"
-    GAIN = "gain"
+    BULK = "bulk"
 
 
 class Profile(Base):

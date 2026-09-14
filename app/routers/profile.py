@@ -46,7 +46,7 @@ class ProfileModel(BaseModel):
     )
     goal: Goal = Field(
         description="Fitness goal used to determine the user's target calorie intake",
-        examples=["lose"]
+        examples=["cut"]
     )
 
 
