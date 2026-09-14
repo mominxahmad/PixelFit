@@ -5,10 +5,10 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field, EmailStr
 from ..models import User
 from pwdlib import PasswordHash
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from datetime import datetime, timezone , timedelta
 from ..config import settings
-from jose import jwt
+from jose import jwt, JWTError
 
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -89,6 +89,27 @@ def assign_token(id: int, username: str, role: str, time_delta):
 
 
 
+###  for user dependency in other endpoints
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+def current_user_auth(token: Annotated[str, Depends(oauth2_bearer)]):
+    try:
+        payload = jwt.decode(token,settings.SECRET_KEY,algorithms=[settings.ALGORITHM])
+        username = payload.get("sub")
+        id = payload.get("id")
+        role = payload.get("role")
+        return {
+            "username" : username,
+            "id" : id,
+            "role" : role
+        }
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User Verification Failed"
+        )
+
+
 """===========================================ENDPOINTS==========================================="""
 @router.post(path="/login""/register", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
 def register_user(db: database_dependency, new_user: UserModel):
@@ -113,7 +134,7 @@ def login_for_access_token(db: database_dependency, form_data: form_dependency):
     if not user:
         raise HTTPException(
             status_code = status.HTTP_401_UNAUTHORIZED,
-            detail = "Invalid Credentials."
+            detail = "Invalid User."
         )
     token = assign_token(id = user.id,
                          username = user.username,
