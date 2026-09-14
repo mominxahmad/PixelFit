@@ -157,3 +157,15 @@ def update_profile(db: database_dependency, user: user_dependency, profile: Prof
     db.commit()
     db.refresh(existing_profile)
     return existing_profile
+
+
+@router.delete(path="/", status_code=status.HTTP_204_NO_CONTENT)
+def delete_profile(db: database_dependency, user: user_dependency):
+    existing_profile = db.query(Profile).filter(Profile.user_id == user.get("id")).first()
+    if existing_profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No User Profile Found"
+        )
+    db.delete(existing_profile)
+    db.commit()
