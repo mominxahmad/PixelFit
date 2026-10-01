@@ -71,11 +71,11 @@ def calculate_target_calories(tdee: int, goal: Goal):
 
 ###  GEMINI CONFIG
 PRIMARY_MODEL = "gemini-3.8-flash"
-FALLBACK_MODEL = "gemini-2.5-flash"  # <-- change to a fallback your API key can access
+FALLBACK_MODEL = "gemini-3.5-flash-lite"
 RETRYABLE_CODES = {429, 500, 503}
 MAX_ATTEMPTS = 3
 
-client = genai.Client(api_key=settings.LLM_API_KEY)  # created once, not per call
+client = genai.Client(api_key=settings.LLM_API_KEY)
 
 
 ###  GEMINI FUNCTIONS
@@ -94,7 +94,7 @@ def _generate_with_retry(model: str, prompt: str):
         except errors.APIError as e:
             if e.code not in RETRYABLE_CODES or attempt == MAX_ATTEMPTS - 1:
                 raise
-            time.sleep(2 ** attempt + random.random())  # ~1s, ~2s
+            time.sleep(2 ** attempt + random.random())
 
 
 def call_gemini_for_meal_plan(age: int, sex, height_cm: int, weight_kg: int,
