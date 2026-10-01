@@ -1,7 +1,8 @@
 from .database import Base
 from sqlalchemy import (Column, Integer, Float, String, ForeignKey,
-                        Enum as SQLEnum)
+                        Enum as SQLEnum, JSON)
 from enum import Enum
+
 
 
 class Role(Enum):
@@ -53,3 +54,16 @@ class Profile(Base):
     bmr = Column(Integer, nullable=False)
     bmi = Column(Float, nullable=False)
     tdee = Column(Integer, nullable=False)
+
+
+class MealPlan(Base):
+    __tablename__ = "meal_plans"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    generation_id = Column(String, nullable=False)
+    variant_label = Column(String, nullable=False)
+    cuisine_preference = Column(String, nullable=True)
+    goal = Column(SQLEnum(Goal), nullable=False)
+    target_calories = Column(Integer, nullable=False)
+    plan_content = Column(JSON, nullable=False)
