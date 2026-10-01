@@ -1,0 +1,27 @@
+services:
+  backend:
+    build: .
+    container_name: PixelFitAPI
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://${USER_POSTGRES}:${PASSWORD_POSTGRES}@postgres:5432/${DB_POSTGRES}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM}
+      LLM_API_KEY: ${LLM_API_KEY}
+    depends_on:
+      - postgres
+    restart: on-failure
+  postgres:
+    image: postgres:18
+    container_name: postgres-PixelFit
+    environment:
+      POSTGRES_DB: ${DB_POSTGRES}
+      POSTGRES_USER: ${USER_POSTGRES}
+      POSTGRES_PASSWORD: ${PASSWORD_POSTGRES}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+volumes:
+  postgres_data:
